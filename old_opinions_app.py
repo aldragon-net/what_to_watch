@@ -20,6 +20,7 @@ app.config['SECRET_KEY'] = '40kmonkeysputbananain'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+
 class Opinion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(128), nullable=False)
@@ -28,6 +29,7 @@ class Opinion(db.Model):
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     added_by = db.Column(db.String(64))
 
+
 class OpinionForm(FlaskForm):
     title = StringField(
         'Введите название фильма',
@@ -35,7 +37,7 @@ class OpinionForm(FlaskForm):
                     Length(1, 128)]
     )
     text = TextAreaField(
-        'Напишите мнение', 
+        'Напишите мнение',
         validators=[DataRequired(message='Обязательное поле')]
     )
     source = URLField(
@@ -54,6 +56,7 @@ def index_view():
     opinion = Opinion.query.offset(offset_value).first()
     return render_template('opinion.html', opinion=opinion)
 
+
 @app.route('/add', methods=['GET', 'POST'])
 def add_opinion_view():
     form = OpinionForm()
@@ -63,28 +66,32 @@ def add_opinion_view():
             flash('Такое мнение уже было оставлено ранее!')
             return render_template('add_opinion.html', form=form)
         opinion = Opinion(
-            title=form.title.data, 
-            text=form.text.data, 
+            title=form.title.data,
+            text=form.text.data,
             source=form.source.data
         )
         db.session.add(opinion)
         db.session.commit()
         return redirect(url_for('opinion_view', id=opinion.id))
     return render_template('add_opinion.html', form=form)
-    
-@app.route('/opinions/<int:id>')  
-def opinion_view(id):  
-    opinion = Opinion.query.get_or_404(id) 
+
+
+@app.route('/opinions/<int:id>')
+def opinion_view(id):
+    opinion = Opinion.query.get_or_404(id)
     return render_template('opinion.html', opinion=opinion)
+
 
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template('404.html'), 404
 
+
 @app.errorhandler(500)
 def internal_error(error):
     db.session.rollback()
     return render_template('500.html'), 500
+
 
 @app.cli.command('load_opinions')
 def load_opinions_command():
@@ -97,14 +104,15 @@ def load_opinions_command():
         # Для подсчёта строк добавляется счётчик
         counter = 0
         for row in reader:
-            # Распакованный словарь можно использовать 
+            # Распакованный словарь можно использовать
             # для создания объекта мнения
             opinion = Opinion(**row)
             # Изменения нужно зафиксировать
             db.session.add(opinion)
             db.session.commit()
             counter += 1
-    click.echo(f'Загружено мнений: {counter}') 
+    click.echo(f'Загружено мнений: {counter}')
+
 
 if __name__ == '__main__':
     app.run()
